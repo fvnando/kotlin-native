@@ -171,8 +171,11 @@ internal val psiToIrPhase = konanUnitPhase(
             // Note: using [llvmModuleSpecification] since this phase produces IR for generating single LLVM module.
 
             val exportedDependencies = (getExportedDependencies() + modulesWithoutDCE).distinct()
+            val functionIrClassFactory = BuiltInFictitiousFunctionIrClassFactory(
+                    symbolTable, generatorContext.irBuiltIns, reflectionTypes)
             val deserializer = KonanIrLinker(
                     moduleDescriptor,
+                    functionIrClassFactory,
                     this as LoggingContext,
                     generatorContext.irBuiltIns,
                     symbolTable,
@@ -181,6 +184,7 @@ internal val psiToIrPhase = konanUnitPhase(
             )
 
             var dependenciesCount = 0
+            val modules = mutableListOf<IrModuleFragment>()
             while (true) {
                 // context.config.librariesWithDependencies could change at each iteration.
                 val dependencies = moduleDescriptor.allDependencyModules.filter {
@@ -194,16 +198,12 @@ internal val psiToIrPhase = konanUnitPhase(
                 }
 
                 for (dependency in sortDependencies(dependencies)) {
-                    deserializer.deserializeIrModuleHeader(dependency)
+                    modules.add(deserializer.deserializeIrModuleHeader(dependency))
                 }
                 if (dependencies.size == dependenciesCount) break
                 dependenciesCount = dependencies.size
             }
 
-            deserializer.initializeExpectActualLinker()
-
-            val functionIrClassFactory = BuiltInFictitiousFunctionIrClassFactory(
-                    symbolTable, generatorContext.irBuiltIns, reflectionTypes)
             val symbols = KonanSymbols(this, symbolTable, symbolTable.lazyWrapper, functionIrClassFactory)
             val stubGenerator = DeclarationStubGenerator(
                     moduleDescriptor, symbolTable,
@@ -222,7 +222,7 @@ internal val psiToIrPhase = konanUnitPhase(
             val irProviders = listOf(
                     irProviderForCEnumsAndCStructs,
                     irProviderForInteropStubs,
-                    functionIrClassFactory,
+//                    functionIrClassFactory,
                     deserializer,
                     stubGenerator
             )
@@ -238,16 +238,16 @@ internal val psiToIrPhase = konanUnitPhase(
                 // how ExpectedActualResolver is implemented.
                 // Need to fix ExpectActualResolver to either cache expects or somehow reduce the member scope searches.
                 if (mppKlibs) expectDescriptorToSymbol else null
-            )
+            ) {
+//                functionIrClassFactory.module = modules.singleOrNull { it.descriptor.isKonanStdlib() } ?: it
+                deserializer.init(it)
+            }
 
-            deserializer.finalizeExpectActualLinker()
+            deserializer.postProcess()
 
             if (this.stdlibModule in modulesWithoutDCE) {
                 functionIrClassFactory.buildAllClasses()
             }
-            modulesWithoutDCE
-                    .filter(ModuleDescriptor::isFromInteropLibrary)
-                    .forEach(irProviderForCEnumsAndCStructs::buildAllEnumsAndStructsFrom)
 
             module.acceptVoid(ManglerChecker(KonanManglerIr, Ir2DescriptorManglerAdapter(KonanManglerDesc)))
 
