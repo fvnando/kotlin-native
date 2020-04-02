@@ -224,7 +224,6 @@ internal val psiToIrPhase = konanUnitPhase(
 
             val irProviders = listOf(deserializer)
             stubGenerator.setIrProviders(irProviders)
-            deserializer.init(moduleGenerator.moduleFragment, pluginExtensions)
 
             expectDescriptorToSymbol = mutableMapOf<DeclarationDescriptor, IrSymbol>()
             val module = translator.generateModuleFragment(
@@ -235,7 +234,7 @@ internal val psiToIrPhase = konanUnitPhase(
                 // referenceExpectsForUsedActuals() appears to be quadratic in time because of
                 // how ExpectedActualResolver is implemented.
                 // Need to fix ExpectActualResolver to either cache expects or somehow reduce the member scope searches.
-                if (mppKlibs) expectDescriptorToSymbol else null
+                if (mppKlibs) expectDescriptorToSymbol else null, pluginExtensions
             )
 
             deserializer.postProcess()
