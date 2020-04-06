@@ -25,11 +25,7 @@ import org.jetbrains.kotlin.descriptors.konan.isNativeStdlib
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
-import org.jetbrains.kotlin.ir.util.DeclarationStubGenerator
-import org.jetbrains.kotlin.ir.util.SymbolTable
-import org.jetbrains.kotlin.ir.util.addChild
-import org.jetbrains.kotlin.ir.util.addFile
-import org.jetbrains.kotlin.ir.util.file
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 import org.jetbrains.kotlin.konan.target.CompilerOutputKind
 import org.jetbrains.kotlin.psi2ir.Psi2IrConfiguration
@@ -384,6 +380,14 @@ internal val dependenciesLowerPhase = SameTypeNamedPhaseWrapper(
                             input.files.clear()
                         }
 
+                // Lower all referenced inline functions from cached libraries.
+                if (context.irFilesForInlineFunctions.isNotEmpty()) {
+                    input.files += context.irFilesForInlineFunctions.values
+                    allLoweringsPhase.invoke(phaseConfig, phaserState, context, input)
+
+                    input.files.clear()
+                }
+
                 // Save all files for codegen in reverse topological order.
                 // This guarantees that libraries initializers are emitted in correct order.
                 context.librariesWithDependencies
@@ -392,6 +396,11 @@ internal val dependenciesLowerPhase = SameTypeNamedPhaseWrapper(
                                     ?: return@forEach
                             input.files += libModule.files
                         }
+
+                if (context.irFilesForInlineFunctions.isNotEmpty()) {
+                    input.files += context.irFilesForInlineFunctions.values
+                }
+
                 input.files += files
 
                 return input

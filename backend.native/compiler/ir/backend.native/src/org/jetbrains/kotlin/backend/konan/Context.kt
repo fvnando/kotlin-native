@@ -47,6 +47,7 @@ import org.jetbrains.kotlin.backend.common.ir.copyTo
 import org.jetbrains.kotlin.backend.common.ir.copyToWithoutSuperTypes
 import org.jetbrains.kotlin.backend.konan.objcexport.ObjCExport
 import org.jetbrains.kotlin.backend.konan.llvm.coverage.CoverageManager
+import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
 import org.jetbrains.kotlin.ir.descriptors.WrappedSimpleFunctionDescriptor
 import org.jetbrains.kotlin.ir.descriptors.WrappedTypeParameterDescriptor
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
@@ -65,6 +66,8 @@ internal class SpecialDeclarationsFactory(val context: Context) {
     private val bridgesDescriptors = mutableMapOf<Pair<IrSimpleFunction, BridgeDirections>, IrSimpleFunction>()
     private val loweredEnums = mutableMapOf<IrClass, LoweredEnum>()
     private val ordinals = mutableMapOf<ClassDescriptor, Map<ClassDescriptor, Int>>()
+
+    val loweredInlineFunctions = mutableSetOf<IrFunction>()
 
     object DECLARATION_ORIGIN_FIELD_FOR_OUTER_THIS :
             IrDeclarationOriginImpl("FIELD_FOR_OUTER_THIS")
@@ -295,6 +298,8 @@ internal class Context(config: KonanConfig) : KonanBackendContext(config) {
 
             ir = KonanIr(this, module)
         }
+
+    val irFilesForInlineFunctions = mutableMapOf<IrFile, IrFile>()
 
     override lateinit var ir: KonanIr
 
