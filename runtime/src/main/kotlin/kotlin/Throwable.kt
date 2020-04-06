@@ -155,7 +155,7 @@ private external fun getStackTraceStrings(stackTrace: NativePtrArray): Array<Str
  * - the detailed description of each throwable in the [Throwable.cause] chain.
  */
 @SinceKotlin("1.4")
-public actual fun Throwable.toStringWithTrace(): String = dumpStackTrace()
+public actual fun Throwable.stackTraceToString(): String = dumpStackTrace()
 
 /**
  * Adds the specified exception to the list of exceptions that were
