@@ -158,6 +158,14 @@ private external fun getStackTraceStrings(stackTrace: NativePtrArray): Array<Str
 public actual fun Throwable.stackTraceToString(): String = dumpStackTrace()
 
 /**
+ * Prints the [detailed description][Throwable.stackTraceToString] of this throwable to the standard error output.
+ */
+@SinceKotlin("1.4")
+@Suppress("EXTENSION_SHADOWED_BY_MEMBER")
+@kotlin.internal.InlineOnly
+public actual inline fun Throwable.printStackTrace(): Unit = printStackTrace()
+
+/**
  * Adds the specified exception to the list of exceptions that were
  * suppressed in order to deliver this exception.
  *
