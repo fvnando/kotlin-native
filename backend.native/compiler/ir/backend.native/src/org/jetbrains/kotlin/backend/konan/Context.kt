@@ -299,8 +299,6 @@ internal class Context(config: KonanConfig) : KonanBackendContext(config) {
             ir = KonanIr(this, module)
         }
 
-    val irFilesForInlineFunctions = mutableMapOf<IrFile, IrFile>()
-
     override lateinit var ir: KonanIr
 
     override val irBuiltIns

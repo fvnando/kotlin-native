@@ -316,6 +316,7 @@ internal val linkerPhase = konanUnitPhase(
 internal val allLoweringsPhase = namedIrModulePhase(
         name = "IrLowering",
         description = "IR Lowering",
+        // TODO: The lowerings before inlinePhase should be aligned with [NativeInlineFunctionResolver.kt]
         lower = removeExpectDeclarationsPhase then
                 stripTypeAliasDeclarationsPhase then
                 lowerBeforeInlinePhase then
@@ -380,14 +381,6 @@ internal val dependenciesLowerPhase = SameTypeNamedPhaseWrapper(
                             input.files.clear()
                         }
 
-                // Lower all referenced inline functions from cached libraries.
-                if (context.irFilesForInlineFunctions.isNotEmpty()) {
-                    input.files += context.irFilesForInlineFunctions.values
-                    allLoweringsPhase.invoke(phaseConfig, phaserState, context, input)
-
-                    input.files.clear()
-                }
-
                 // Save all files for codegen in reverse topological order.
                 // This guarantees that libraries initializers are emitted in correct order.
                 context.librariesWithDependencies
@@ -396,10 +389,6 @@ internal val dependenciesLowerPhase = SameTypeNamedPhaseWrapper(
                                     ?: return@forEach
                             input.files += libModule.files
                         }
-
-                if (context.irFilesForInlineFunctions.isNotEmpty()) {
-                    input.files += context.irFilesForInlineFunctions.values
-                }
 
                 input.files += files
 

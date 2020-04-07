@@ -32,26 +32,6 @@ internal class NativeInlineFunctionResolver(override val context: Context) : Def
             return function
 
         context.specialDeclarationsFactory.loweredInlineFunctions.add(function)
-        if (!context.llvmModuleSpecification.containsDeclaration(function)) {
-            // A function from a cached library.
-            var prevParent: IrDeclaration = function
-            while (true) {
-                val parent = prevParent.parent
-                if (parent is IrFile)
-                    break
-                prevParent = parent as IrDeclaration
-            }
-
-            val originalFile = prevParent.parent as IrFile
-            val irFile = context.irFilesForInlineFunctions.getOrPut(originalFile) {
-                IrFileImpl(
-                        originalFile.fileEntry,
-                        EmptyPackageFragmentDescriptor(context.moduleDescriptor,
-                                FqName.topLevel(Name.special("<inline_functions_from_cached_libraries>")))
-                )
-            }
-            irFile.addChild(prevParent)
-        }
 
         PreInlineLowering(context).lower(body, function)
 
@@ -66,8 +46,12 @@ internal class NativeInlineFunctionResolver(override val context: Context) : Def
         SharedVariablesLowering(context).lower(body, function)
 
         LocalClassesInInlineLambdasLowering(context).lower(body, function)
-        LocalClassesInInlineFunctionsLowering(context).lower(body, function)
-        LocalClassesExtractionFromInlineFunctionsLowering(context).lower(body, function)
+
+        if (context.llvmModuleSpecification.containsDeclaration(function)) {
+            // Do not extract local classes off of inline functions from cached libraries.
+            LocalClassesInInlineFunctionsLowering(context).lower(body, function)
+            LocalClassesExtractionFromInlineFunctionsLowering(context).lower(body, function)
+        }
 
         return function
     }
