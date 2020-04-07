@@ -12,15 +12,9 @@ import org.jetbrains.kotlin.backend.common.lower.inline.LocalClassesInInlineFunc
 import org.jetbrains.kotlin.backend.common.lower.inline.LocalClassesInInlineLambdasLowering
 import org.jetbrains.kotlin.backend.common.runPostfix
 import org.jetbrains.kotlin.backend.konan.Context
-import org.jetbrains.kotlin.descriptors.impl.EmptyPackageFragmentDescriptor
-import org.jetbrains.kotlin.ir.declarations.IrDeclaration
-import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
-import org.jetbrains.kotlin.ir.util.addChild
-import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.ir.util.dump
 
 // TODO: This is a bit hacky. Think about adopting persistent IR ideas.
 internal class NativeInlineFunctionResolver(override val context: Context) : DefaultInlineFunctionResolver(context) {
@@ -37,10 +31,14 @@ internal class NativeInlineFunctionResolver(override val context: Context) : Def
 
         ArrayConstructorLowering(context).lower(body, function)
 
-        NullableFieldsForLateinitCreationLowering(context)
-                .runPostfix(true).transformFlat(function)
-        NullableFieldsDeclarationLowering(context)
-                .runPostfix(true).transformFlat(function)
+        assert(NullableFieldsForLateinitCreationLowering(context)
+                .runPostfix(true).transformFlat(function) == null) {
+            "Unexpected transformation of function ${function.dump()}"
+        }
+        assert(NullableFieldsDeclarationLowering(context)
+                .runPostfix(true).transformFlat(function) == null) {
+            "Unexpected transformation of function ${function.dump()}"
+        }
         LateinitUsageLowering(context).lower(body, function)
 
         SharedVariablesLowering(context).lower(body, function)
