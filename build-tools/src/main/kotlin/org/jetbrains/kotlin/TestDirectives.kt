@@ -37,7 +37,7 @@ fun buildCompileList(source: Path, outputDirectory: String): List<TestFile> {
     } else {
         // There are several files
         var processedChars = 0
-        var module: TestModule
+        var module: TestModule = TestModule.default
         var nextFileExists = true
         while (nextFileExists) {
             var moduleName = matcher.group(1)
@@ -47,10 +47,10 @@ fun buildCompileList(source: Path, outputDirectory: String): List<TestFile> {
             if (moduleName != null) {
                 moduleName = moduleName.trim { it <= ' ' }
                 module = TestModule("${srcFile.name}.$moduleName",
-                        moduleDependencies.parseModuleList().map { "${srcFile.name}.$it" },
+                        moduleDependencies.parseModuleList().map {
+                            if (it != "support") "${srcFile.name}.$it" else it
+                        },
                         moduleFriends.parseModuleList().map { "${srcFile.name}.$it" })
-            } else {
-                module = TestModule.default
             }
 
             val fileName = matcher.group(4)
