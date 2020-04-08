@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.backend.konan.lower
 
+import org.jetbrains.kotlin.backend.common.DeclarationTransformer
 import org.jetbrains.kotlin.backend.common.lower.*
 import org.jetbrains.kotlin.backend.common.lower.inline.DefaultInlineFunctionResolver
 import org.jetbrains.kotlin.backend.common.lower.inline.LocalClassesExtractionFromInlineFunctionsLowering
@@ -31,14 +32,8 @@ internal class NativeInlineFunctionResolver(override val context: Context) : Def
 
         ArrayConstructorLowering(context).lower(body, function)
 
-        assert(NullableFieldsForLateinitCreationLowering(context)
-                .runPostfix(true).transformFlat(function) == null) {
-            "Unexpected transformation of function ${function.dump()}"
-        }
-        assert(NullableFieldsDeclarationLowering(context)
-                .runPostfix(true).transformFlat(function) == null) {
-            "Unexpected transformation of function ${function.dump()}"
-        }
+        NullableFieldsForLateinitCreationLowering(context).lowerWithLocalDeclarations(function)
+        NullableFieldsDeclarationLowering(context).lowerWithLocalDeclarations(function)
         LateinitUsageLowering(context).lower(body, function)
 
         SharedVariablesLowering(context).lower(body, function)
@@ -52,5 +47,10 @@ internal class NativeInlineFunctionResolver(override val context: Context) : Def
         }
 
         return function
+    }
+
+    private fun DeclarationTransformer.lowerWithLocalDeclarations(function: IrFunction) {
+        if (runPostfix(true).transformFlat(function) != null)
+            error("Unexpected transformation of function ${function.dump()}")
     }
 }
