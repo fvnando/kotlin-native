@@ -24,9 +24,9 @@ internal fun addLlvmAttributes(context: Context, irFunction: IrFunction, llvmFun
         enforceFramePointer(llvmFunction)
     }
 
-    if (mustNotInline(context, irFunction)) {
+    /*if (mustNotInline(context, irFunction)) {
         setFunctionNoInline(llvmFunction)
-    }
+    }*/
 }
 
 private fun mustNotInline(context: Context, irFunction: IrFunction): Boolean {
