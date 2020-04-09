@@ -86,7 +86,7 @@ data class TestModule(
         val friends: List<String>
 ) {
     val isDefaultModule
-        get() = this == default || name.endsWith("/main")
+        get() = this == default || name.endsWith(".main")
 
     companion object {
         val default = TestModule("default", emptyList(), emptyList())
